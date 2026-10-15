@@ -1,0 +1,121 @@
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: gamestore-mysql
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "3307:3306"   # 3307 en el host para no chocar con un MySQL/XAMPP local
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  eureka-server:
+    build: ./0.eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+
+  comprador-service:
+    build: ./1.comprador-service
+    container_name: comprador-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: ""
+      EUREKA_HOST: eureka-server
+    ports:
+      - "8081:8081"
+    restart: on-failure
+
+  juego-service:
+    build: ./2.juego-service
+    container_name: juego-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: ""
+      EUREKA_HOST: eureka-server
+    ports:
+      - "8082:8082"
+    restart: on-failure
+
+  stock-service:
+    build: ./3.stock-service
+    container_name: stock-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: ""
+      EUREKA_HOST: eureka-server
+    ports:
+      - "8083:8083"
+    restart: on-failure
+
+  compra-service:
+    build: ./4.compra-service
+    container_name: compra-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: ""
+      EUREKA_HOST: eureka-server
+    ports:
+      - "8084:8084"
+    restart: on-failure
+
+  biblioteca-service:
+    build: ./5.biblioteca-service
+    container_name: biblioteca-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: ""
+      EUREKA_HOST: eureka-server
+    ports:
+      - "8085:8085"
+    restart: on-failure
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    depends_on:
+      - eureka-server
+    environment:
+      EUREKA_HOST: eureka-server
+    ports:
+      - "8080:8080"
+    restart: on-failure
+
+volumes:
+  mysql-data:
